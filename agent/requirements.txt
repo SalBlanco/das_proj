@@ -1,0 +1,14 @@
+feedparser
+os
+datetime
+time
+feedparser
+json
+urllib
+urllib.request
+re
+langchain_openai
+langchain_core.messages 
+langgraph.checkpoint.memory 
+langchain_core.tools 
+langchain.agents
