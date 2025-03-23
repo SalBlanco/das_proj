@@ -1,5 +1,5 @@
 import os
-from utils import search, write_records, paginate, check_history
+from src.utils import search, write_records, paginate, check_history
 
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage
