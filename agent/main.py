@@ -20,6 +20,8 @@ def main():
     if os.path.exists(records_file):
         with open(records_file, 'r') as f:
             index = len(f.readlines())
+    else:
+        index = 0
     
     # Number of papers to retrieve per call
     papers_per_call = 10
