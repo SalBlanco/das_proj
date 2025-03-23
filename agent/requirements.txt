@@ -1,6 +1,4 @@
 feedparser
-langchain_openai
-langchain_core.messages 
-langgraph.checkpoint.memory 
-langchain_core.tools 
-langchain.agents
+langchain-openai
+langchain-core
+langgraph
