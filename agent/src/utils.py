@@ -123,7 +123,7 @@ def write(obj, filename='records.json'):
         os.chdir(path+'out')
         
     # Create and/or append to output.json file to handle dictionary format
-    f = open('test.json', 'a')
+    f = open('records.json', 'a')
     # Write each entry on its own line
     check_history(obj, filename)
     # for entry in obj:
