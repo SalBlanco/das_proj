@@ -16,7 +16,7 @@ def main():
         raise ValueError("OPENAI_API_KEY environment variable is not set")
     
     # Load current index from state file
-    records_file = 'out/records.json'
+    records_file = '../out/records.json'
     if os.path.exists(records_file):
         with open(records_file, 'r') as f:
             index = len(f.readlines())

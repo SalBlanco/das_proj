@@ -112,7 +112,8 @@ def check_history(obj, filename='records.json'):
 def write(obj, filename='records.json'):
     """Write DAS paper information to output file for records."""
     # Filepath where we will store found papers' information.
-    path = '/Users/salblanco/Desktop/das/das_proj/'
+    # path = 'SalBlanco/das_proj/'
+    path = '../'
 
     # If corresponding output folder does not exist, create it
     os.listdir(path)
