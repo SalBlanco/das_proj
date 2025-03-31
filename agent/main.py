@@ -16,7 +16,7 @@ def main():
         raise ValueError("OPENAI_API_KEY environment variable is not set")
     
     # Load current index from state file
-    records_file = '../out/records.json'
+    records_file = '../out/gs_records.json'
     if os.path.exists(records_file):
         with open(records_file, 'r') as f:
             index = len(f.readlines())
@@ -37,17 +37,35 @@ def main():
     config = {"configurable": {"thread_id": "das-papers"}}
     
     # Run the agent
+    # for step in agent_executor.stream(
+    #     {"messages": [HumanMessage(content=f"""
+    # You are a research assistant helping me find Distributed Acoustic Sensing (DAS) papers on arXiv. 
+
+    # **Task Instructions:**  
+    # 1. Use the `search` tool to retrieve the next {papers_per_call} papers, starting from index {index}.
+    # 2. Return the following details for each paper:  
+    #     - title  
+    #     - id  
+    #     - author
+    #     - link
+    # 3. If you are able to correctly search, use the return 'obj' from the 'search' tool as the input for the 'write' tool. 
+    # 4. If you are able to correctly search and write to the corresponding file, update the next index using the `paginate` tool. 
+    # 5. Return the next starting index for future searches with the format: 'The next starting index for future searches is [index].'
+
+    # **Notes:**  
+    # - Always start from the most recent index and paginate correctly to avoid duplicates.  
+    # - If no new papers are found, return an empty list along with the current index.  
+    # """)]},
     for step in agent_executor.stream(
         {"messages": [HumanMessage(content=f"""
-    You are a research assistant helping me find Distributed Acoustic Sensing (DAS) papers on arXiv. 
+    You are a research assistant helping me find Distributed Acoustic Sensing (DAS) papers on Google Scholar. 
 
     **Task Instructions:**  
     1. Use the `search` tool to retrieve the next {papers_per_call} papers, starting from index {index}.
     2. Return the following details for each paper:  
-        - title  
-        - id  
-        - author
-        - link
+        - authors
+        - pub_url
+        -title
     3. If you are able to correctly search, use the return 'obj' from the 'search' tool as the input for the 'write' tool. 
     4. If you are able to correctly search and write to the corresponding file, update the next index using the `paginate` tool. 
     5. Return the next starting index for future searches with the format: 'The next starting index for future searches is [index].'
