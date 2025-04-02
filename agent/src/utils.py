@@ -4,82 +4,83 @@ import time
 import feedparser
 import json
 import urllib, urllib.request
+import requests
 import re
 from langchain_core.tools import tool
 
 from scholarly import scholarly
 from scholarly import ProxyGenerator
 
-# @tool
-# # adapted from https://info.arxiv.org/help/api/examples/python_arXiv_paging_example.txt
-# def search(results_per_iteration, start):
-#   """Search for DAS papers"""
+from dotenv import load_dotenv
 
-#   obj = []
+# adapted from https://info.arxiv.org/help/api/examples/python_arXiv_paging_example.txt
+def arxiv_search(results_per_iteration, start):
+  """Search for DAS papers"""
+
+  obj = []
   
-#   # Get current date + time
-#   now = datetime.now()
-#   today = now.strftime("%Y%m%d%H%M")
+  # Get current date + time
+  now = datetime.now()
+  today = now.strftime("%Y%m%d%H%M")
 
-#   # Base API query url
-#   base_url = 'http://export.arxiv.org/api/query?'
+  # Base API query url
+  base_url = 'http://export.arxiv.org/api/query?'
 
-#   # API search parameters for DAS papers from 1/01/2010 to today.
-#   search_query = f'all:DAS+AND+all:distributed+AND+all:acoustic+AND+all:sensing+submittedDate:201001010000+TO+{today}'
+  # API search parameters for DAS papers from 1/01/2010 to today.
+  search_query = f'all:DAS+AND+all:distributed+AND+all:acoustic+AND+all:sensing+submittedDate:201001010000+TO+{today}'
 
-#   # Number of seconds to wait beetween calls; recommended by arXiv documentation
-#   wait_time = 3 
+  # Number of seconds to wait beetween calls; recommended by arXiv documentation
+  wait_time = 3 
 
-#   print(f'Searching arXiv for {search_query}')
+  print(f'Searching arXiv for {search_query}')
 
-#   while True:
+  while True:
 
-#     print(f"Results {start} - {start+results_per_iteration}")
+    print(f"Results {start} - {start+results_per_iteration}")
 
-#     query = f'search_query={search_query}&start={start}&max_results={start+results_per_iteration}'
+    query = f'search_query={search_query}&start={start}&max_results={start+results_per_iteration}'
 
-#     # GET request using the base_url and query
-#     response = urllib.request.urlopen(base_url+query).read()
+    # GET request using the base_url and query
+    response = urllib.request.urlopen(base_url+query).read()
 
-#     if not response or len(response) == 0:
-#       print("No more results. Please try again.")
-#       break
+    if not response or len(response) == 0:
+      print("No more results. Please try again.")
+      break
 
-#     # Parse the response using feedparser
-#     feed = feedparser.parse(response)
+    # Parse the response using feedparser
+    feed = feedparser.parse(response)
 
-#     # Run through each entry, and print out information
-#     for entry in feed.entries:
-#       paper_id = entry.id.split('/abs/')[-1]
-#       title = entry.title
-#       author = entry.author
-#       summary = entry.summary if hasattr(entry, 'summary') else ""
+    # Run through each entry, and print out information
+    for entry in feed.entries:
+      paper_id = entry.id.split('/abs/')[-1]
+      title = entry.title
+      author = entry.author
+      summary = entry.summary if hasattr(entry, 'summary') else ""
 
-#       # Format as a search result
-#       content = f"Paper ID: {paper_id}\nTitle: {title}\nAuthor: {author}\nSummary: {summary}"
+      # Format as a search result
+      content = f"Paper ID: {paper_id}\nTitle: {title}\nAuthor: {author}\nSummary: {summary}"
 
-#       # Add to results
-#       obj.append({
-#           'url': entry.id,  # Use arXiv URL
-#           'content': content
-#       })
+      # Add to results
+      obj.append({
+          'url': entry.id,  # Use arXiv URL
+          'content': content
+      })
 
-#       print("arxiv-id: ", paper_id)
-#       print("Title: ", title)
-#       # feedparser v4.1 only grabs the first author
-#       print("First Author: ", author)
+      print("arxiv-id: ", paper_id)
+      print("Title: ", title)
+      # feedparser v4.1 only grabs the first author
+      print("First Author: ", author)
 
-#     # Break loop after extracting relevant information
-#     break
+    # Break loop after extracting relevant information
+    break
 
-#   # Sleep before calling API again
-#   print(f"Sleeping for {wait_time} seconds")
-#   time.sleep(wait_time)
+  # Sleep before calling API again
+  print(f"Sleeping for {wait_time} seconds")
+  time.sleep(wait_time)
   
-#   return obj
+  return obj
 
-@tool
-def search(papers_per_call, index, search_query='distributed acoustic sensing'):
+def scholarly_search(papers_per_call, index, search_query='distributed acoustic sensing'):
     """Search for DAS papers"""
 
     # Create object to store paper information
@@ -120,6 +121,49 @@ def search(papers_per_call, index, search_query='distributed acoustic sensing'):
 
     return obj
 
+def s2_search(papers_per_call, index, token=None, query="DAS distributed acoustic sensing"):
+
+    load_dotenv()
+    # Get S2 API Key
+    api_key = os.environ.get("S2_API_KEY")
+    assert(api_key is not None, "API Key found.")
+
+    url = "http://api.semanticscholar.org/graph/v1/paper/search/bulk"
+
+    query_params = {
+    "query": query,
+    "fields": "title,url,authors,publicationDate",
+    "year": "2010-",
+    "sort": "publicationDate"
+}
+    if token is not None:
+        query_params["token"] = token
+    
+    # Define headers with API key
+    headers = {"x-api-key": api_key}
+
+    # Send the API request
+    response = requests.get(url, params=query_params, headers=headers).json()
+    obj = response['data']
+    token = response['token']
+    
+    time.sleep(1)
+
+    return obj, token
+
+@tool
+def search(papers_per_call, index, mode='s2'):
+    """Search for DAS papers"""
+
+    if mode == 'arxiv':
+        obj = arxiv_search(papers_per_call, index)
+    elif mode == 'scholarly':
+        obj = scholarly_search(papers_per_call, index)
+    elif mode == 's2':
+        obj, token = s2_search(papers_per_call, index)
+    
+    return obj, token if token else None
+
 @tool
 def paginate(papers_per_call, index, success=True):
     """Increment counter for pagination."""
@@ -128,8 +172,7 @@ def paginate(papers_per_call, index, success=True):
     print(f"Paginating: index {index} → {new_index} (success={success})")
     return new_index
 
-# @tool
-def check_history(obj, filename='gs_records.json'):
+def check_history(obj, filename='s2_records.json'):
     """Write DAS paper information to output file if not already in history."""
     # Create history set for efficient lookup
     history = set()
@@ -154,7 +197,7 @@ def check_history(obj, filename='gs_records.json'):
                 file.write(json.dumps(entry, sort_keys=True) + '\n')
 
 @tool
-def write(obj, filename='gs_records.json'):
+def write(obj, filename='s2_records.json'):
     """Write DAS paper information to output file for records."""
     # Filepath where we will store found papers' information.
     path = '../'
@@ -168,6 +211,6 @@ def write(obj, filename='gs_records.json'):
         os.chdir(path+'out')
         
     # Create and/or append to output.json file to handle dictionary format
-    f = open('gs_records.json', 'a')
+    f = open('s2_records.json', 'a')
     # Write each entry on its own line
     check_history(obj, filename)
