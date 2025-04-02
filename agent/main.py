@@ -8,15 +8,19 @@ from langgraph.prebuilt import create_react_agent
 
 import re
 import json
+from dotenv import load_dotenv
+import time
+
 
 def main():
     # Load API key from environment variable
+    load_dotenv()
     api_key = os.environ.get("OPENAI_API_KEY")
     if not api_key:
         raise ValueError("OPENAI_API_KEY environment variable is not set")
     
     # Load current index from state file
-    records_file = '../out/gs_records.json'
+    records_file = '../out/s2_records.json'
     if os.path.exists(records_file):
         with open(records_file, 'r') as f:
             index = len(f.readlines())
@@ -24,7 +28,7 @@ def main():
         index = 0
     
     # Number of papers to retrieve per call
-    papers_per_call = 10
+    papers_per_call = 90
     
     print(f"Starting search from index {index}")
     
@@ -56,16 +60,41 @@ def main():
     # - Always start from the most recent index and paginate correctly to avoid duplicates.  
     # - If no new papers are found, return an empty list along with the current index.  
     # """)]},
+    # for step in agent_executor.stream(
+    #     {"messages": [HumanMessage(content=f"""
+    # You are a research assistant helping me find Distributed Acoustic Sensing (DAS) papers on Google Scholar. 
+
+    # **Task Instructions:**  
+    # 1. Use the `search` tool to retrieve the next {papers_per_call} papers, starting from index {index}.
+    # 2. Return the following details for each paper:  
+    #     - authors
+    #     - pub_url
+    #     -title
+    # 3. If you are able to correctly search, use the return 'obj' from the 'search' tool as the input for the 'write' tool. 
+    # 4. If you are able to correctly search and write to the corresponding file, update the next index using the `paginate` tool. 
+    # 5. Return the next starting index for future searches with the format: 'The next starting index for future searches is [index].'
+
+    # **Notes:**  
+    # - Always start from the most recent index and paginate correctly to avoid duplicates.  
+    # - If no new papers are found, return an empty list along with the current index.  
+    # """)]},
+    #     config,
+    #     stream_mode="values",
+    # ):
+    #     step["messages"][-1].pretty_print()
+
     for step in agent_executor.stream(
         {"messages": [HumanMessage(content=f"""
-    You are a research assistant helping me find Distributed Acoustic Sensing (DAS) papers on Google Scholar. 
+    You are a research assistant helping me find Distributed Acoustic Sensing (DAS) papers. 
 
     **Task Instructions:**  
     1. Use the `search` tool to retrieve the next {papers_per_call} papers, starting from index {index}.
     2. Return the following details for each paper:  
+        - paperId
+        - url
+        - title
+        - publicationDate
         - authors
-        - pub_url
-        -title
     3. If you are able to correctly search, use the return 'obj' from the 'search' tool as the input for the 'write' tool. 
     4. If you are able to correctly search and write to the corresponding file, update the next index using the `paginate` tool. 
     5. Return the next starting index for future searches with the format: 'The next starting index for future searches is [index].'
@@ -85,6 +114,9 @@ def main():
             index = int(match.group(1))  # Extract and convert to integer
     
     print(f"Updated index to {index}")
+
+    # Bypass OpenAI TPM (tokens per minute) limit
+    time.sleep(60)
     
 if __name__ == "__main__":
     main()
